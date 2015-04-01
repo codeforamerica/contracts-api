@@ -1,0 +1,21 @@
+# Flask
+Flask==0.10.1
+Flask-RESTful==0.2.12
+Jinja2==2.7.3
+Werkzeug==0.9.6
+itsdangerous==0.24
+
+# Database
+peewee==2.4.1
+
+# Serialization
+marshmallow==0.7.0
+
+# Deployment
+gunicorn>=19.1.1
+
+# Caching
+Flask-Cache>=0.13.1
+
+# Debug toolbar
+Flask-DebugToolbar==0.9.1
