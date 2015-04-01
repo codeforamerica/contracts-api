@@ -1,13 +1,6 @@
 Contracts API
 =============
 
-The contracts API provides an interface for managing contracts.
-
-[![Build Status](https://travis-ci.org/codeforamerica/template-maker.svg?branch=master)](https://travis-ci.org/codeforamerica/template-maker)
-
-Contracts API
-=============
-
 ## What is it?
 The contracts API is a Flask app that provides a RESTful API for managing business processes around contracts
 
