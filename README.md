@@ -34,6 +34,8 @@ Use the following commands to bootstrap your environment:
     cd contracts-api
     # install python dependencies
     pip install -r requirements/dev.txt
+    # bring the database up to speed
+    python manage.py migrate_up
     # run the server
     python manage.py server
 

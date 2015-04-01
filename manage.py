@@ -3,6 +3,9 @@
 import os
 import sys
 import subprocess
+import argparse
+from arnold import main
+
 from flask.ext.script import Manager, Shell, Server
 
 from contracts_api.app import create_app
@@ -24,6 +27,28 @@ def _make_context():
     app, db, and the User model by default.
     """
     return {'app': app, 'db': db, 'User': User}
+
+@manager.command
+def migrate_up(fake=False):
+    main(
+        direction='up',
+        database=db,
+        directory=os.path.join(HERE, 'migrations'),
+        migration_module="migrations",
+        fake=fake
+    )
+    return False
+
+@manager.command
+def migrate_down(fake=False):
+    main(
+        direction='down',
+        database=db,
+        directory=os.path.join(HERE, 'migrations'),
+        migration_module="migrations",
+        fake=fake
+    )
+    return
 
 manager.add_command('server', Server(port=os.environ.get('PORT', 9000)))
 manager.add_command('shell', Shell(make_context=_make_context))
