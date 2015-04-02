@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 '''The app module, containing the app factory function.'''
-from flask import Flask, render_template
+from flask import Flask
 
-from contracts_api.settings import DevConfig, ProdConfig
+from contracts_api.settings import DevConfig
 from contracts_api.extensions import (
     debug_toolbar,
     rest_api
@@ -28,5 +28,5 @@ def register_extensions(app):
     return None
 
 def register_blueprints(app):
-    app.register_blueprint(api.views.blueprint)
+    app.register_blueprint(api.routes.blueprint)
     return None
