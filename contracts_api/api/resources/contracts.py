@@ -39,8 +39,8 @@ class ContractList(Resource):
                 status_comments=data.get('status_comments')
             )
 
-            contract_schema = ContractSchema()
-            errors = contract_schema.validate(contract, exclude=('id',))
+            contract_schema = ContractSchema(exclude=('id',))
+            errors = contract_schema.validate(contract._data)
 
             if errors:
                 return errors, 400
@@ -70,8 +70,6 @@ class ContractDetail(Resource):
             if contract:
                 data = json.loads(request.data)
 
-                contract = Contract.get(id=contract_id)
-
                 updated = Contract(
                     item_number=data.get('item_number', contract.item_number),
                     spec_number=data.get('spec_number', contract.spec_number),
@@ -81,7 +79,7 @@ class ContractDetail(Resource):
                 )
 
                 contract_schema = ContractSchema(exclude=('id',))
-                errors = contract_schema.validate(contract)
+                errors = contract_schema.validate(contract._data)
 
                 if errors:
                     return errors, 400

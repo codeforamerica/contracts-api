@@ -32,7 +32,6 @@ class ContractAudit(BaseModel):
         db_table = 'contract_audit'
 
 class Flow(BaseModel):
-    flow_type = pw.CharField()
+    flow_type = pw.CharField(unique=True)
     # because arrays of FKs aren't supported, we will check this on the INSERT side
     stage_order = ArrayField(pw.IntegerField)
-
