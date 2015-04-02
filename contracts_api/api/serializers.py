@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 
-import json
 from marshmallow import Schema, fields
 
 class ContractSchema(Schema):

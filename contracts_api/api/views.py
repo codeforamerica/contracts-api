@@ -3,13 +3,12 @@
 import json
 import peewee as pw
 
-from flask import Blueprint, jsonify, abort, request, Response, redirect
+from flask import Blueprint, jsonify, request, Response
 from flask.ext.restful import Resource, Api
 
 from contracts_api.database import db
 from contracts_api.api.models import Contract, Stage, StageProperty
 from contracts_api.api.serializers import ContractSchema, StagePropertySchema, StageSchema
-from contracts_api.extensions import rest_api as api
 
 blueprint = Blueprint('api', __name__,
         url_prefix='/api/v1'
@@ -47,72 +46,66 @@ class ContractList(Resource):
             )
 
             contract_schema = ContractSchema()
-
             errors = contract_schema.validate(contract, exclude=('id',))
 
             if errors:
-                response = jsonify(errors)
-                response.status_code = 400
-                return response
+                return errors, 400
 
             contract.save()
             return Response(status=201)
 
         except pw.IntegrityError, e:
-            response = jsonify({'error': e.message})
-            response.status_code = 400
-            return response
+            return { 'error': e.message }, 400
 
         except Exception, e:
-            repsonse = jsonify({'error': e.message})
-            response.status_code = 403
-            return response
+            return { 'error': e.message }, 403
 
 class ContractDetail(Resource):
     def get(self, contract_id):
-        contract = Contract.get(id=contract_id)
+        contract = Contract.select().where(Contract.id==contract_id).first()
 
-        return jsonify({
-            'contract': ContractSchema(contract).data
-        })
+        if contract:
+            return { 'contract': ContractSchema(contract).data }
+
+        return {'error': 'contract not found'}, 404
 
     def put(self, contract_id):
         try:
-            data = json.loads(request.data)
+            contract = Contract.select().where(Contract.id==contract_id).first()
 
-            contract = Contract.get(id=contract_id)
+            if contract:
+                data = json.loads(request.data)
 
-            updated = Contract(
-                item_number=data.get('item_number', contract.item_number),
-                spec_number=data.get('spec_number', contract.spec_number),
-                department=data.get('department', contract.department),
-                commodity_title=data.get('commodity_title', contract.commodity_title),
-                status_comments=data.get('status_comments', contract.status_comments)
-            )
+                contract = Contract.get(id=contract_id)
 
-            valid = ContractSchema(updated, exclude=('id', ))
+                updated = Contract(
+                    item_number=data.get('item_number', contract.item_number),
+                    spec_number=data.get('spec_number', contract.spec_number),
+                    department=data.get('department', contract.department),
+                    commodity_title=data.get('commodity_title', contract.commodity_title),
+                    status_comments=data.get('status_comments', contract.status_comments)
+                )
 
-            if not valid.is_valid():
-                response = jsonify(valid.errors)
-                response.status_code = 400
-                return response
+                contract_schema = ContractSchema(exclude=('id',))
+                errors = contract_schema.validate(contract)
 
-            contract.update(**updated._data).execute()
-            return Response(status=200)
+                if errors:
+                    return errors, 400
+
+                contract.update(**updated._data).execute()
+                return Response(status=200)
+
+            return { 'error': 'contract not found' }, 404
 
         except Exception, e:
-            response = jsonify({'error': e.message})
-            response.status_code = 403
-            return response
+            return { 'error': e.message }, 403
 
     def delete(self, contract_id):
         try:
             Contract.delete().where(Contract.id==contract_id).execute()
             return Response(status=204)
         except Exception, e:
-            response = jsonify({'error': e.message})
-            response.status_code = 403
-            return response
+            return { 'error': e.message }, 403
 
 api.add_resource(ContractList, '/contracts')
 api.add_resource(ContractDetail, '/contract/<int:contract_id>')
@@ -139,14 +132,14 @@ class StageList(Resource):
             ).data
         }
 
-        return jsonify(result)        
+        return jsonify(result)
 
     def post(self):
         '''
         Creates a new stage
         '''
-        try:
-            with db.transaction() as txn:
+        with db.transaction() as txn:
+            try:
                 data = json.loads(request.data)
 
                 stage = Stage(
@@ -154,7 +147,6 @@ class StageList(Resource):
                 )
 
                 stage_schema = StageSchema(only=('name'))
-
                 stage_errors = stage_schema.validate(stage._data)
                 if stage_errors:
                     return jsonify(stage_errors), 400
@@ -168,7 +160,6 @@ class StageList(Resource):
                     )
 
                     stage_property_schema = StagePropertySchema(exclude=('id',))
-
                     stage_property_errors = stage_property_schema.validate(stage_properties._data)
 
                     if stage_property_errors:
@@ -177,27 +168,99 @@ class StageList(Resource):
 
                     stage_properties.save()
 
-            db.commit()
-            return Response(status=201)
+                db.commit()
+                return Response(status=201)
 
-        except pw.IntegrityError:
-            txn.rollback()
-            return jsonify({'error': 'id already taken'}), 400
+            except pw.IntegrityError:
+                txn.rollback()
+                return {'error': 'id already taken'}, 400
 
-        except Exception, e:
-            txn.rollback()
-            return jsonify({'error': e.message}), 403
+            except Exception, e:
+                txn.rollback()
+                return {'error': e.message}, 403
 
 class StageDetail(Resource):
     def get(self, stage_id):
-        stage = Stage.get(id=stage_id)
-        import pdb; pdb.set_trace()
+        stage = (Stage
+            .select(Stage, StageProperty)
+            .join(StageProperty)
+            .where(Stage.id==stage_id)
+            .order_by(Stage.id)
+            .aggregate_rows()
+        ).first()
+
+        if stage:
+            return jsonify({ 'stage': StageSchema(stage).data })
+
+        return {'error': 'stage not found'}, 404
 
     def put(self, stage_id):
-        pass
+        with db.transaction() as txn:
+            try:
+                data = json.loads(request.data)
+
+                stage = (Stage.select(Stage, StageProperty)
+                    .join(StageProperty)
+                    .where(Stage.id==stage_id)
+                    .order_by(Stage.id)
+                    .aggregate_rows()
+                ).first()
+
+                if stage:
+                    updated = Stage(
+                        name = data.get('name', stage.name)
+                    )
+
+                    stage_schema = StageSchema(only=('name',))
+                    stage_errors = stage_schema.validate(updated._data)
+                    if stage_errors:
+                        return stage_errors, 400
+
+                    stage.update(**updated._data).execute()
+
+                    if data.get('properties', None):
+                        StageProperty.delete().where(StageProperty.stage==stage_id).execute()
+
+                        for _property in data.get('properties'):
+                            stage_properties = StageProperty(
+                                stage=stage.id,
+                                stage_property=_property.get('stage_property')
+                            )
+
+                            stage_property_schema = StagePropertySchema(exclude=('id',))
+                            stage_property_errors = stage_property_schema.validate(stage_properties._data)
+
+                            if stage_property_errors:
+                                txn.rollback()
+                                return jsonify(stage_property_errors), 400
+
+                            stage_properties.save()
+
+                    db.commit()
+                    return Response(status=200)
+
+                return { 'error': 'stage not found' }, 404
+            except Exception, e:
+                txn.rollback()
+                return { 'error': e.message }, 403
 
     def delete(self, stage_id):
-        pass
+        try:
+            stage = (Stage.select(Stage, StageProperty)
+                .join(StageProperty)
+                .where(Stage.id==stage_id)
+                .order_by(Stage.id)
+                .aggregate_rows()
+            ).first()
+
+            if stage:
+                stage.delete_instance(recursive=True)
+                return Response(status=204)
+
+            return {'error': 'stage not found'}, 404
+
+        except Exception, e:
+            return { 'error': e.message }, 403
 
 api.add_resource(StageList, '/stages')
 api.add_resource(StageDetail, '/stage/<int:stage_id>')
