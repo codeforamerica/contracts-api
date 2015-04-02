@@ -8,7 +8,7 @@ class Stage(BaseModel):
     name = pw.CharField()
 
 class StageProperty(BaseModel):
-    stage_id = pw.ForeignKeyField(Stage, related_name='stage', to_field='id')
+    stage = pw.ForeignKeyField(Stage, related_name='stage_properties', to_field='id')
     stage_property = pw.TextField()
 
     class Meta:

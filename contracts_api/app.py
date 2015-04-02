@@ -4,7 +4,8 @@ from flask import Flask, render_template
 
 from contracts_api.settings import DevConfig, ProdConfig
 from contracts_api.extensions import (
-    debug_toolbar
+    debug_toolbar,
+    rest_api
 )
 from contracts_api import api
 
@@ -23,6 +24,7 @@ def create_app(config_object=DevConfig):
 
 def register_extensions(app):
     debug_toolbar.init_app(app)
+    rest_api.init_app(app)
     return None
 
 def register_blueprints(app):
