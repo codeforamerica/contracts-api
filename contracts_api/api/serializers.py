@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 
-import peewee as pw
 from marshmallow import Schema, fields, ValidationError
 from contracts_api.api.models import Stage
 
