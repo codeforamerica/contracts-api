@@ -14,8 +14,6 @@ class FlowList(Resource):
         flows = Flow.select()
         flow_count = flows.count()
 
-        import pdb; pdb.set_trace()
-
         result = {
             'meta': {
                 'page': 1,
@@ -91,7 +89,7 @@ class FlowDetail(Resource):
             flow = Flow.select().where(Flow.id==flow_id).first()
 
             if flow:
-                Flow.delete().where(Flow.id==flow_id).first()
+                flow.delete_instance()
                 return Response(status=204)
 
             return { 'error': 'flow not found' }, 404
