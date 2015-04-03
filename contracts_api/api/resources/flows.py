@@ -33,7 +33,7 @@ class FlowList(Resource):
 
 
             flow = Flow(
-                flow_type = data.get('flow_type'),
+                flow_name = data.get('flow_name'),
                 stage_order = data.get('stage_order')
             )
 
@@ -68,7 +68,7 @@ class FlowDetail(Resource):
                 data = json.loads(request.data)
 
                 updated = Flow(
-                    flow_type = data.get('flow_type', flow.flow_type),
+                    flow_name = data.get('flow_name', flow.flow_name),
                     stage_order = data.get('stage_order', flow.stage_order)
                 )
 

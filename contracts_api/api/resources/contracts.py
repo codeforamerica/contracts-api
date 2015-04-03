@@ -14,6 +14,8 @@ class ContractList(Resource):
         contracts = Contract.select()
         contract_count = contracts.count()
 
+        import pdb; pdb.set_trace()
+
         result = {
             'meta': {
                 'page': 1,
@@ -36,7 +38,9 @@ class ContractList(Resource):
                 spec_number=data.get('spec_number', None),
                 department=data.get('department', None),
                 commodity_title=data.get('commodity_title', None),
-                status_comments=data.get('status_comments')
+                status_comments=data.get('status_comments'),
+                current_stage=data.get('current_stage'),
+                flow=data.get('flow')
             )
 
             contract_schema = ContractSchema(exclude=('id',))
@@ -75,7 +79,9 @@ class ContractDetail(Resource):
                     spec_number=data.get('spec_number', contract.spec_number),
                     department=data.get('department', contract.department),
                     commodity_title=data.get('commodity_title', contract.commodity_title),
-                    status_comments=data.get('status_comments', contract.status_comments)
+                    status_comments=data.get('status_comments', contract.status_comments),
+                    current_stage=data.get('current_stage', contract.current_stage),
+                    flow=data.get('flow', contract.flow.flow_name)
                 )
 
                 contract_schema = ContractSchema(exclude=('id',))

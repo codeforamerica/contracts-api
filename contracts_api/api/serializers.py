@@ -1,14 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from marshmallow import Schema, fields, ValidationError
-from contracts_api.api.models import Stage
-
-class ContractSchema(Schema):
-    '''
-    Serialize an individual contract
-    '''
-    class Meta:
-        fields = ('id', 'item_number', 'spec_number', 'department', 'commodity_title', 'status_comments')
+from contracts_api.api.models import Stage, Flow
 
 class StagePropertySchema(Schema):
     '''
@@ -27,6 +20,23 @@ class StageSchema(Schema):
 
     class Meta:
         fields = ('id', 'name', 'stage_properties')
+
+def validate_is_stage(stage_id):
+    stage = Stage.get(stage_id)
+
+    if stage:
+        return True
+
+    raise ValidationError('Not a valid stage')
+
+def validate_is_flow(flow_name):
+    flow = Flow.select().where(Flow.flow_name==flow_name).first()
+
+    if flow:
+        return True
+
+    raise ValidationError('Not a valid flow name')
+
 
 def validate_stage_order(input_order):
     # << is a peewee operator for SQL IN
@@ -48,8 +58,22 @@ class FlowSchema(Schema):
     '''
     Serialize an individual flow
     '''
-    flow_type = fields.String(required=True)
+    flow_name = fields.String(required=True)
     stage_order = fields.List(fields.Integer, required=True, validate=validate_stage_order)
 
     class Meta:
-        fields = ('id', 'flow_type', 'stage_order')
+        fields = ('id', 'flow_name', 'stage_order')
+
+class ContractSchema(Schema):
+    '''
+    Serialize an individual contract
+    '''
+    current_stage = fields.Nested(StageSchema(exclude=('stage_properties',)), validate=validate_is_stage)
+    flow = fields.Nested(FlowSchema(), validate=validate_is_flow, attribute='flow_name')
+
+    class Meta:
+        fields = (
+            'id', 'item_number', 'spec_number', 'department',
+            'commodity_title', 'status_comments', 'current_stage',
+            'flow'
+        )
