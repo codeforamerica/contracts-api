@@ -9,6 +9,9 @@ class Config(object):
     PROJECT_ROOT = os.path.abspath(os.path.join(APP_DIR, os.pardir))
     DEBUG_TB_ENABLED = False  # Disable Debug toolbar
     DEBUG_TB_INTERCEPT_REDIRECTS = False
+    DATABASE_NAME = os.environ.get('DATABASE_NAME', 'contracts_api')
+    DATABASE_USER = os.environ.get('DATABASE_USER', 'bensmithgall')
+    DATABASE_HOST = os.environ.get('DATABASE_HOST', 'localhost')
 
 class ProdConfig(Config):
     """Production configuration."""
@@ -24,5 +27,6 @@ class DevConfig(Config):
     CACHE_TYPE = 'simple'  # Can be "memcached", "redis", etc.
 
 class TestConfig(Config):
+    DATABASE_NAME = os.environ.get('DATABASE_NAME', 'contracts_api_test')
     TESTING = True
     DEBUG = True

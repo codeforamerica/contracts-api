@@ -1,14 +1,9 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import os
 import peewee as pw
 
-db = pw.PostgresqlDatabase(
-    os.environ.get('DATABASE_NAME', 'contracts_api'),
-    user=os.environ.get('DATABASE_USER', 'bensmithgall'),
-    host=os.environ.get('DATABASE_HOST', 'localhost')
-)
+db = pw.PostgresqlDatabase(None)
 
 class BaseModel(pw.Model):
     """Base Model -- all inheriting classes share the same database"""
@@ -21,3 +16,12 @@ class BaseModel(pw.Model):
 
     class Meta:
         database = db
+
+def connect_to_database(app):
+    '''
+    Helper method to connect to database based on app config
+    '''
+    db.init(app.config.get('DATABASE_NAME'),
+        user=app.config.get('DATABASE_USER'),
+        host=app.config.get('DATABASE_HOST')
+        )
