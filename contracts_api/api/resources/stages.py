@@ -12,7 +12,7 @@ class StageList(Resource):
     def get(self):
         stages = (Stage
             .select(Stage, StageProperty)
-            .join(StageProperty)
+            .join(StageProperty, join_type=pw.JOIN_LEFT_OUTER)
             .order_by(Stage.id)
             .aggregate_rows()
         )
@@ -47,7 +47,7 @@ class StageList(Resource):
                 stage_schema = StageSchema(only=('name'))
                 stage_errors = stage_schema.validate(stage._data)
                 if stage_errors:
-                    return jsonify(stage_errors), 400
+                    return stage_errors, 400
 
                 stage.save()
 
@@ -62,7 +62,7 @@ class StageList(Resource):
 
                     if stage_property_errors:
                         txn.rollback()
-                        return jsonify(stage_property_errors), 400
+                        return stage_property_errors, 400
 
                     stage_properties.save()
 
@@ -71,7 +71,7 @@ class StageList(Resource):
 
             except pw.IntegrityError:
                 txn.rollback()
-                return {'error': 'id already taken'}, 400
+                return {'error': 'id already taken'}, 403
 
             except Exception, e:
                 txn.rollback()
@@ -81,14 +81,14 @@ class StageDetail(Resource):
     def get(self, stage_id):
         stage = (Stage
             .select(Stage, StageProperty)
-            .join(StageProperty)
+            .join(StageProperty, join_type=pw.JOIN_LEFT_OUTER)
             .where(Stage.id==stage_id)
             .order_by(Stage.id)
             .aggregate_rows()
         ).first()
 
         if stage:
-            return jsonify({ 'stage': StageSchema(stage).data })
+            return StageSchema(stage).data
 
         return {'error': 'stage not found'}, 404
 
@@ -98,7 +98,7 @@ class StageDetail(Resource):
                 data = json.loads(request.data)
 
                 stage = (Stage.select(Stage, StageProperty)
-                    .join(StageProperty)
+                    .join(StageProperty, join_type=pw.JOIN_LEFT_OUTER)
                     .where(Stage.id==stage_id)
                     .order_by(Stage.id)
                     .aggregate_rows()
@@ -130,7 +130,7 @@ class StageDetail(Resource):
 
                             if stage_property_errors:
                                 txn.rollback()
-                                return jsonify(stage_property_errors), 400
+                                return stage_property_errors, 400
 
                             stage_properties.save()
 
@@ -143,19 +143,15 @@ class StageDetail(Resource):
                 return { 'error': e.message }, 403
 
     def delete(self, stage_id):
-        try:
-            stage = (Stage.select(Stage, StageProperty)
-                .join(StageProperty)
-                .where(Stage.id==stage_id)
-                .order_by(Stage.id)
-                .aggregate_rows()
-            ).first()
+        stage = (Stage.select(Stage, StageProperty)
+            .join(StageProperty, join_type=pw.JOIN_LEFT_OUTER)
+            .where(Stage.id==stage_id)
+            .order_by(Stage.id)
+            .aggregate_rows()
+        ).first()
 
-            if stage:
-                stage.delete_instance(recursive=True)
-                return Response(status=204)
+        if stage:
+            stage.delete_instance(recursive=True)
+            return Response(status=204)
 
-            return {'error': 'stage not found'}, 404
-
-        except Exception, e:
-            return { 'error': e.message }, 403
+        return {'error': 'stage not found'}, 404

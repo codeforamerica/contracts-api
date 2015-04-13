@@ -3,11 +3,20 @@
 from marshmallow import Schema, fields, ValidationError
 from contracts_api.api.models import Stage, Flow
 
+def validate_not_none(stage_property):
+    '''
+    Validates if this is not none
+    '''
+    if stage_property is not None and stage_property != '':
+        return True
+
+    raise ValidationError('Stage Property cannot be None or empty')
+
 class StagePropertySchema(Schema):
     '''
     Serialize the properties of an individual stage
     '''
-    stage_property = fields.String(required=True)
+    stage_property = fields.String(required=True, validate=validate_not_none)
 
     class Meta:
         fields = ('id', 'stage_property')
@@ -16,13 +25,14 @@ class StageSchema(Schema):
     '''
     Seralize an individual stage
     '''
+    name = fields.String(validate=validate_not_none)
     stage_properties = fields.Nested(StagePropertySchema(exclude=('id', )), many=True)
 
     class Meta:
         fields = ('id', 'name', 'stage_properties')
 
-def validate_is_stage(stage_id):
-    stage = Stage.get(stage_id)
+def validate_is_stage(input_stage):
+    stage = Stage.select().where(Stage.id==int(input_stage.get('id'))).first()
 
     if stage:
         return True
