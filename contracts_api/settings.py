@@ -27,6 +27,9 @@ class DevConfig(Config):
     CACHE_TYPE = 'simple'  # Can be "memcached", "redis", etc.
 
 class TestConfig(Config):
+    '''Testing configuration'''
+    ENV = 'test'
     DATABASE_NAME = os.environ.get('DATABASE_NAME', 'contracts_api_test')
+    DATABASE_USER = ''
     TESTING = True
     DEBUG = True

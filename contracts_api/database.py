@@ -21,7 +21,10 @@ def connect_to_database(app):
     '''
     Helper method to connect to database based on app config
     '''
-    db.init(app.config.get('DATABASE_NAME'),
-        user=app.config.get('DATABASE_USER'),
-        host=app.config.get('DATABASE_HOST')
-        )
+    if app.config.get('ENV') == 'test':
+        db.init(app.config.get('DATABASE_NAME'))
+    else:
+        db.init(app.config.get('DATABASE_NAME'),
+            user=app.config.get('DATABASE_USER'),
+            host=app.config.get('DATABASE_HOST')
+            )
