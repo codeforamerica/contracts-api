@@ -14,8 +14,6 @@ class ContractList(Resource):
         contracts = Contract.select()
         contract_count = contracts.count()
 
-        import pdb; pdb.set_trace()
-
         result = {
             'meta': {
                 'page': 1,
@@ -39,8 +37,8 @@ class ContractList(Resource):
                 department=data.get('department', None),
                 commodity_title=data.get('commodity_title', None),
                 status_comments=data.get('status_comments'),
-                current_stage=data.get('current_stage'),
-                flow=data.get('flow')
+                current_stage=dict(id=data.get('current_stage')),
+                flow_name=dict(flow_name=data.get('flow_name'))
             )
 
             contract_schema = ContractSchema(exclude=('id',))
@@ -48,6 +46,9 @@ class ContractList(Resource):
 
             if errors:
                 return errors, 400
+            else:
+                contract.current_stage = data.get('current_stage')
+                contract.flow_name = data.get('flow_name')
 
             contract.save()
             return Response(status=201)
@@ -63,7 +64,7 @@ class ContractDetail(Resource):
         contract = Contract.select().where(Contract.id==contract_id).first()
 
         if contract:
-            return { 'contract': ContractSchema(contract).data }
+            return ContractSchema(contract).data
 
         return {'error': 'contract not found'}, 404
 
@@ -80,15 +81,18 @@ class ContractDetail(Resource):
                     department=data.get('department', contract.department),
                     commodity_title=data.get('commodity_title', contract.commodity_title),
                     status_comments=data.get('status_comments', contract.status_comments),
-                    current_stage=data.get('current_stage', contract.current_stage),
-                    flow=data.get('flow', contract.flow.flow_name)
+                    current_stage=dict(id=data.get('current_stage', contract.current_stage)),
+                    flow_name=dict(flow_name=data.get('flow_name', contract.flow_name.flow_name))
                 )
 
                 contract_schema = ContractSchema(exclude=('id',))
-                errors = contract_schema.validate(contract._data)
+                errors = contract_schema.validate(updated._data)
 
                 if errors:
                     return errors, 400
+                else:
+                    updated.current_stage = data.get('current_stage', contract.current_stage)
+                    updated.flow_name = data.get('flow_name', contract.flow_name.flow_name)
 
                 contract.update(**updated._data).execute()
                 return Response(status=200)
@@ -99,8 +103,10 @@ class ContractDetail(Resource):
             return { 'error': e.message }, 403
 
     def delete(self, contract_id):
-        try:
-            Contract.delete().where(Contract.id==contract_id).execute()
+        contract = Contract.select().where(Contract.id==contract_id).first()
+
+        if contract:
+            contract.delete().execute()
             return Response(status=204)
-        except Exception, e:
-            return { 'error': e.message }, 403
+        else:
+            return { 'error': 'contract not found' }, 404

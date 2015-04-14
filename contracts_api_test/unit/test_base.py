@@ -14,7 +14,7 @@ class BaseTestCase(TestCase):
 
     def setUp(self):
         db.connect()
-        db.create_tables([Stage, Contract, StageProperty, ContractAudit, Flow])
+        db.create_tables([Stage, Contract, StageProperty, ContractAudit, Flow], safe=True)
 
     def tearDown(self):
         db.connect()

@@ -31,7 +31,6 @@ class FlowList(Resource):
         try:
             data = json.loads(request.data)
 
-
             flow = Flow(
                 flow_name = data.get('flow_name'),
                 stage_order = data.get('stage_order')
@@ -39,6 +38,7 @@ class FlowList(Resource):
 
             flow_schema = FlowSchema(exclude=('id',))
             errors = flow_schema.validate(flow._data)
+
             if errors:
                 return errors, 400
 
@@ -56,43 +56,37 @@ class FlowDetail(Resource):
         flow = Flow.select().where(Flow.id==flow_id).first()
 
         if flow:
-            return { 'flow': FlowSchema(flow).data }
+            return FlowSchema(flow).data
 
         return { 'error': 'flow not found' }, 404
 
     def put(self, flow_id):
-        try:
-            flow = Flow.select().where(Flow.id==flow_id).first()
+        flow = Flow.select().where(Flow.id==flow_id).first()
 
-            if flow:
-                data = json.loads(request.data)
+        if flow:
+            data = json.loads(request.data)
 
-                updated = Flow(
-                    flow_name = data.get('flow_name', flow.flow_name),
-                    stage_order = data.get('stage_order', flow.stage_order)
-                )
+            updated = Flow(
+                flow_name = data.get('flow_name', flow.flow_name),
+                stage_order = data.get('stage_order', flow.stage_order)
+            )
 
-                flow_schema = FlowSchema(exclude=('id',))
-                errors = flow_schema.validate(updated._data)
-                if errors:
-                    return errors, 400
+            flow_schema = FlowSchema(exclude=('id',))
+            errors = flow_schema.validate(updated._data)
+            if errors:
+                return errors, 400
 
-                flow.update(**updated._data).execute()
-                return Response(status=200)
+            flow.update(**updated._data).execute()
+            return Response(status=200)
 
-            return { 'error': 'flow not found' }, 404
-        except Exception, e:
-            return { 'error': e.message }, 403
+        return { 'error': 'flow not found' }, 404
 
     def delete(self, flow_id):
-        try:
-            flow = Flow.select().where(Flow.id==flow_id).first()
+        flow = Flow.select().where(Flow.id==flow_id).first()
 
-            if flow:
-                flow.delete_instance()
-                return Response(status=204)
+        if flow:
+            flow.delete_instance()
+            return Response(status=204)
 
-            return { 'error': 'flow not found' }, 404
-        except Exception, e:
-            return { 'error': e.message }, 403
+        return { 'error': 'flow not found' }, 404
 

@@ -1,0 +1,10 @@
+language: python
+python:
+- '2.7'
+install: pip install -r requirements/dev.txt
+before_script:
+- psql -c 'create database contracts_api_test;' -U postgres
+script: PYTHONPATH=. nosetests contracts_api_test/unit/ -sv --with-coverage --cover-package=contracts_api --cover-erase
+notifications:
+  slack:
+    secure: aD0BTvH4ecYFJhbJ28JC4ItlWH/qbzyrXc7Chg3zbhtL1fzkTtFECJZ3xp1g/HpNn5t8ddpz5a9ugHkdHwlV/OAA2wrtjb0SFL0LkDu7t2FGELUxpE3chFi3/+jQ5hv3BjfWLUp9bf9fV8ETUBXc7MwL6DtrnQWhOzHGMtz/CC4=
